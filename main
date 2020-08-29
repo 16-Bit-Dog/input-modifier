@@ -111,7 +111,7 @@ void GetState(PHIDP_PREPARSED_DATA preparsed, PCHAR report, ULONG reportLength) 
 		}
 		else {
 
-			std::cout << "\n button NOT pressed \n";
+			std::cout << "\n button pressed \n";
 
 		}
 
@@ -260,9 +260,10 @@ void setup() {
 
 				}
 
-
+				CloseHandle(product);
 
 			}
+			HidD_FreePreparsedData(preparsed);
 		}
 		else {
 
@@ -270,8 +271,9 @@ void setup() {
 
 		}
 
-		HidD_FreePreparsedData(preparsed);
-		CloseHandle(product);
+		
+		
+			
 
 		if (good == false) {
 			break;
