@@ -1,5 +1,7 @@
 //Ariel Glasroth
 //break points (f9) saved my life in this program... wow was it good
+// also this is a program filed under the liscene of apache license 2.0
+
 #include <windows.h>
 #include <setupapi.h>
 #include <Hidclass.h>
@@ -7,13 +9,14 @@
 #include <sensorsapi.h>
 #include <SensorsDef.h>
 #include <iostream>
-#include <stdio.h>
+#include <stdio.h> 
 #include <combaseapi.h>
 #include <Devpkey.h>
 #include <hidsdi.h>
 #include <Devguid.h>
 #include <vector>
 #include <exception>
+#include "UsageIDGeneric.h"
 
 #define WIN32_LEAN_AND_MEAN //remove the unneeded
 
@@ -60,71 +63,188 @@ ULONG reportLength;
 
 
 
+std::string UsagePage_CONVERT(int UsagePage) { //        ;(   not the most fun if ever, plus I frogot about the constant expression requirment, and how vs code has no ..., so I remade a switch case statment
+	
+	std::string resultPage;
+
+	if (UsagePage == 0) {
+
+		resultPage = "undefined";
+
+	}
+
+	else if (UsagePage == 1) {
+
+		resultPage = "Generic Desktop";
+
+	}
+	
+	else if (UsagePage == 2) {
+
+		resultPage = "Simulation Controls";
+
+	}
+	else if (UsagePage == 3) {
+
+		resultPage = "VR Controls";
+	}
+	else if (UsagePage == 4) {
+
+		resultPage = "Sport Controls";
+	}
+	else if (UsagePage == 5) {
+
+		resultPage = "GameControls";
+	}
+	else if (UsagePage == 6) {
+
+		resultPage = "Game Device Controls";
+
+	}
+	else if (UsagePage == 7) {
+
+		resultPage = "Keyboard/Pad";
+
+	}
+	else if (UsagePage == 8) {
+
+		resultPage = "LED";
+
+	}
+	else if (UsagePage == 9) {
+
+		resultPage = "Button";
+	}
+	else if (UsagePage == 10) {
+
+		resultPage = "Ordinal";
+	}
+	else if (UsagePage == 11) {
+
+		resultPage = "Telephony Device";
+	}
+	else if (UsagePage == 12) {
+
+		resultPage = "Consumer";
+
+	}
+	else if (UsagePage == 13) {
+
+		resultPage = "Digitizers";
+
+	}
+	else if (UsagePage == 14) {
+
+		resultPage = "Haptics";
+
+	}
+	else if (UsagePage == 15) {
+
+		resultPage = "PID";
+	}
+	else if (UsagePage == 16) {
+
+		resultPage = "Unicode";
+	}
+	else if (UsagePage == 17) {
+
+		resultPage = "Reserved";
+	}
+	else if (UsagePage == 18) {
+
+		resultPage = "Eye/Head Tracker";
+	}
+	else if (UsagePage == 19) {
+
+		resultPage = "Reserved";
+	}
+	else if (UsagePage == 20) {
+
+		resultPage = "Auxilairy Display";
+	}
+	else if (UsagePage >= 21 && UsagePage <= 31) { // could have used a function for this in a switch case
+
+
+		resultPage = "Reserved";
+	}
+
+	else if (UsagePage == 32) {
+
+		resultPage = "Sensors";
+
+	}
+	else if (UsagePage >= 33 && UsagePage <= 63) {
+
+		resultPage = "Haptics";
+
+	}
+
+	else{
+		resultPage = "Unknown/Unlisted (if a request about a device being unlisted is posted, I will add more identifiers";
+	}
+	
+	return resultPage;
+
+}
+
 void GetState(PHIDP_PREPARSED_DATA preparsed, PCHAR report, ULONG reportLength) {
 
 
 
 	ULONG rl = HidP_MaxDataListLength(HidP_Input, preparsed); // get max usage size for max usage list length // some thing in this is wrong
 
-	PHIDP_DATA data[250];
+	PHIDP_DATA data;
 
-	for (int i = 0; i < rl; i++) {
 
-		data[i] = (PHIDP_DATA)malloc(sizeof(PHIDP_DATA));
+		data = (PHIDP_DATA)malloc(sizeof(PHIDP_DATA));
 	
 
-	}
+	while (true) {
+		NTSTATUS hi = HidP_GetData(HidP_Input, (data), &rl, preparsed, report, reportLength);
 
-	NTSTATUS hi = HidP_GetData(HidP_Input, reinterpret_cast<PHIDP_DATA>(&data), &rl, preparsed, report, reportLength);
+		if (hi == HIDP_STATUS_SUCCESS) {
 
-	if (hi == HIDP_STATUS_SUCCESS) {
+			std::cout << "\nnew poll\n";
 
-		std::cout << "\nYAY\n";
-
-	}
-
-	else {
-
-		std::cout << "\n" << hi << "\n";
-
-	}
-
-	if (GetLastError() != 0) {
-		std::cout << "\n ERROR: " << GetLastError() << "\n";
-	}
-
-	for (int i = 0; i < rl; i++) {
-
-		data[i] = (PHIDP_DATA)malloc(sizeof(PHIDP_DATA));
-
-
-	}
-
-	for (auto o = 0; o < rl;o) {
-	retry:
-		o++;
-
-		if (data[o]->On == true) {
-
-			std::cout << "\n button pressed \n";
-		
 		}
+
 		else {
 
-			std::cout << "\n button pressed \n";
+			std::cout << "\n" << hi << "\n";
 
 		}
 
-	} // HERE LIES ME PRINTING OUT -data-
+		if (GetLastError() != 0) {
+			std::cout << "\n ERROR: " << GetLastError() << "\n";
+		}
 
-	std::cout << "done";
 
+		for (auto o = 0; o < rl; o) {
+		retry:
+			o++;
+
+			if (data[o].On == true) {
+
+				std::cout << "\n button pressed is button: \n" << o;
+
+			}
+			else {
+
+				std::cout << "\n button not pressed \n";
+
+			}
+
+		} // HERE LIES ME PRINTING OUT -data-
+
+		Sleep(1000);
+	}
 
 }
 
 
 
 void setup() {
+	std::cout << "\nif you see nothing after a while, click enter and everything will load\n\n"; // print number in HID thing to later extract packets from it and look at avaible buttons ect...
 
 	typePathData.cbSize = sizeof(SP_DEVICE_INTERFACE_DATA);
 
@@ -141,8 +261,6 @@ void setup() {
 
 	}
 
-
-	std::cout << "\nif you see nothing after a while, click enter and everything will load\n\n"; // print number in HID thing to later extract packets from it and look at avaible buttons ect...
 
 
 	for (i = 0; i == i; i++) { // used the for loop format from Dan77062, Thanks for the neat code format ;)
@@ -170,25 +288,17 @@ void setup() {
 			wprintf(L" \nCreator of Device: %s\n\n", namePrint);
 			free(namePrint);
 
-			if (GetLastError() == 0) {
-				std::cout << "\n property collection is a success\n\n";
-			}
-			else {
-
+			if (GetLastError() != 0) {
 				std::cout << "\n property collection is not a success:" << GetLastError() << "\n\n";
-
 			}
+
 		}
 
 		SetupDiEnumDeviceInterfaces(handle, 0, &hidGUID, i, &typePathData);
-		if (GetLastError() == 0) {
-			std::cout << "\n interface handling is a success\n\n";
-		}
-		else {
-
+		if (GetLastError() != 0) {
 			std::cout << "\n interface handling is not a success:" << GetLastError() << "\n\n";
-
 		}
+
 
 		if (GetLastError() == ERROR_NO_MORE_ITEMS) {
 			std::cout << "\n interface failed\n\n";
@@ -226,19 +336,19 @@ void setup() {
 
 		if (HidD_GetPreparsedData(product, &preparsed)) {
 
-			if (preparsed != NULL) {
-				std::cout << "\n preparsed data collected\n\n";
-			}
-			else {
-
+			if (preparsed == NULL) {
 				std::cout << "\n preparsed data collection FAILED: " << GetLastError() << "\n\n";
-
 			}
+
 
 
 			if (HidP_GetCaps(preparsed, &capsStruct)) {
 
-				printf("\n\n usage %x \n\n", capsStruct.Usage);
+				std::cout <<"\n\n Usage Page: " << UsagePage_CONVERT((int)capsStruct.UsagePage) <<"\n\n";
+
+				if ((int)capsStruct.UsagePage == 1) {
+					std::cout << "\n\n Usage ID (generic device pages only): " << UsageIDG_CONVERT((int)capsStruct.Usage) << "\n\n";
+				}
 
 				hHeap = GetProcessHeap();
 
@@ -247,7 +357,7 @@ void setup() {
 				HidP_GetButtonCaps(HidP_Input, buttons, &capsStruct.NumberInputButtonCaps, preparsed); // thank you random person on MSDN forums, I had no idea I did not need to use a report type var!
 
 
-				std::cout << "\n Number of Inputs found:  " << buttons->Range.UsageMax - buttons->Range.UsageMin + 1 << "\n\n";
+				std::cout << "\n Number of Inputs found:  " << buttons->Range.UsageMax - buttons->Range.UsageMin + 1 << "\n\n\n\n\n\n\n\n";
 
 				if ((buttons->Range.UsageMax - buttons->Range.UsageMin + 1) > 0) {
 
@@ -267,7 +377,7 @@ void setup() {
 		}
 		else {
 
-			std::cout << "\n\n\npreparsed data not retrived\n\n";
+			std::cout << "\n\n\npreparsed data not retrived\n\n\n\n\n\n\n\n";
 
 		}
 
@@ -394,7 +504,7 @@ void setup() {
 
 		product = CreateFileW(typePath->DevicePath, 0, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0, NULL);
 
-
+		
 
 
 
@@ -412,22 +522,56 @@ void setup() {
 
 				HidP_GetButtonCaps(HidP_Input, buttons, &capsStruct.NumberInputButtonCaps, preparsed); // thank you random person on MSDN forums, I had no idea I did not need to use a report type var
 
-				SimpleInputCount = buttons->Range.UsageMax - buttons->Range.UsageMin + 1;
+				//SimpleInputCount = buttons->Range.UsageMax - buttons->Range.UsageMin + 1;
 
-				std::cout << "\n Number of Inputs found:  " << buttons->Range.UsageMax - buttons->Range.UsageMin + 1 << "\n\n";
+				//std::cout << "\n Number of Inputs found:  " << buttons->Range.UsageMax - buttons->Range.UsageMin + 1 << "\n\n";
 
+				int arrayButton; // gets button array item for remote if any exists
+				int arraySensor; // gets sensor array item for remote if any exists
 
+				std::cout << "\n\n USAGEPAGES:\n";
+				for (int i = 0; i < sizeof(buttons); i++) { // sift to find buttons usage
+					std::cout << "\n\n" << UsagePage_CONVERT((int)buttons[i].UsagePage) << "\n\n\n";
+
+					switch((int)buttons[i].UsagePage){
+					case 9: 
+
+						arrayButton = i;
+						continue;
+					
+
+					case 32: 
+
+						arraySensor = i;
+						continue;
+
+					}
+				}
+				std::cout << "\n---\n";
+
+				//PHIDP_BUTTON_CAPS SButtons = (PHIDP_BUTTON_CAPS)HeapAlloc(hHeap, 0, sizeof(HIDP_BUTTON_CAPS) * capsStruct.NumberInputButtonCaps);// spesific buttons
+
+				//HidP_GetSpecificButtonCaps(HidP_Input, USAGE(0x09), NULL, NULL, SButtons, &capsStruct.NumberInputButtonCaps, preparsed); // get array of spesific button caps - that I identify with usage - funny stuff here, most emu's say button 1 when mapping controllers because thats how HID usage is handdled for the button usage page
+
+				
 				report = (PCHAR)malloc(size);
 
 				reportLength = capsStruct.InputReportByteLength;
 
-				HidP_InitializeReportForID(HidP_Input, buttons->ReportID, preparsed, report, reportLength); // get report
+				PHIDP_DATA data;
+				data = (PHIDP_DATA)malloc(sizeof(PHIDP_DATA));
 
+				HidP_InitializeReportForID(HidP_Input, buttons[0].ReportID, preparsed, report, reportLength); // get report
 
+				
+				ULONG dataLength =  HidP_MaxDataListLength(HidP_Input, preparsed);
 
+				NTSTATUS hi = HidP_GetData(HidP_Input, data, &dataLength, preparsed, report, reportLength); // returns only buttons in selected usage - now it works!
 
-
-
+				
+				if (HIDP_STATUS_SUCCESS == hi) {
+					std::cout << GetLastError();
+				}
 
 
 
@@ -437,7 +581,7 @@ void setup() {
 				// now I have all buttons on the usage page --> that are on or off state (so not analog triggers for example)
 
 
-				GetState(preparsed,report,reportLength);
+				//GetState(preparsed,report,reportLength);
 
 
 			}
