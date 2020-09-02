@@ -1,7 +1,7 @@
 //Ariel Glasroth
 //break points (f9) saved my life in this program... wow was it good
 // also this is a program filed under the liscene of apache license 2.0
-
+//also yeah... frogot to name this main
 #include <windows.h>
 #include <setupapi.h>
 #include <Hidclass.h>
