@@ -1,7 +1,8 @@
 //Ariel Glasroth
 //break points (f9) saved my life in this program... wow was it good
 // also this is a program filed under the liscene of apache license 2.0
-//also yeah... frogot to name this main
+
+
 #include <windows.h>
 #include <setupapi.h>
 #include <Hidclass.h>
@@ -58,7 +59,7 @@ ULONG SimpleInputCount; // holds simple input number
 DWORD i = 0;
 
 //report input
-PCHAR report;
+UCHAR report;
 ULONG reportLength;
 
 
@@ -190,54 +191,11 @@ std::string UsagePage_CONVERT(int UsagePage) { //        ;(   not the most fun i
 void GetState(PHIDP_PREPARSED_DATA preparsed, PCHAR report, ULONG reportLength) {
 
 
-
-	ULONG rl = HidP_MaxDataListLength(HidP_Input, preparsed); // get max usage size for max usage list length // some thing in this is wrong
-
-	PHIDP_DATA data;
-
-
-		data = (PHIDP_DATA)malloc(sizeof(PHIDP_DATA));
 	
+	// HERE LIES ME PRINTING OUT -data-
 
-	while (true) {
-		NTSTATUS hi = HidP_GetData(HidP_Input, (data), &rl, preparsed, report, reportLength);
-
-		if (hi == HIDP_STATUS_SUCCESS) {
-
-			std::cout << "\nnew poll\n";
-
-		}
-
-		else {
-
-			std::cout << "\n" << hi << "\n";
-
-		}
-
-		if (GetLastError() != 0) {
-			std::cout << "\n ERROR: " << GetLastError() << "\n";
-		}
-
-
-		for (auto o = 0; o < rl; o) {
-		retry:
-			o++;
-
-			if (data[o].On == true) {
-
-				std::cout << "\n button pressed is button: \n" << o;
-
-			}
-			else {
-
-				std::cout << "\n button not pressed \n";
-
-			}
-
-		} // HERE LIES ME PRINTING OUT -data-
-
-		Sleep(1000);
-	}
+		//Sleep(1000);
+	
 
 }
 
@@ -319,7 +277,7 @@ void setup() {
 		product = CreateFileW(typePath->DevicePath, 0, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0, NULL);
 
 		if (GetLastError() == 0) {
-			//	std::cout << "\n file handle creation is a success\n\n";
+			//std::cout << "\n file handle creation is a success\n\n";
 		}
 		else {
 
@@ -502,11 +460,9 @@ void setup() {
 		printf("\n\nMaking Device Handle: %ls \n\n", typePath->DevicePath); //breaking convention of printing due to data not being user important --> but may have use if someone wants a quick easy debug for their own program
 
 
-		product = CreateFileW(typePath->DevicePath, 0, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0, NULL);
+		product = CreateFileW(typePath->DevicePath, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_FLAG_OVERLAPPED, NULL);
 
-		
-
-
+		std::cout << GetLastError();
 
 		if (HidD_GetPreparsedData(product, &preparsed)) {
 
@@ -554,26 +510,100 @@ void setup() {
 				//HidP_GetSpecificButtonCaps(HidP_Input, USAGE(0x09), NULL, NULL, SButtons, &capsStruct.NumberInputButtonCaps, preparsed); // get array of spesific button caps - that I identify with usage - funny stuff here, most emu's say button 1 when mapping controllers because thats how HID usage is handdled for the button usage page
 
 				
-				report = (PCHAR)malloc(size);
 
-				reportLength = capsStruct.InputReportByteLength;
 
 				PHIDP_DATA data;
 				data = (PHIDP_DATA)malloc(sizeof(PHIDP_DATA));
 
-				HidP_InitializeReportForID(HidP_Input, buttons[0].ReportID, preparsed, report, reportLength); // get report
 
 				
 				ULONG dataLength =  HidP_MaxDataListLength(HidP_Input, preparsed);
+			
+				PCHAR buffer;
 
-				NTSTATUS hi = HidP_GetData(HidP_Input, data, &dataLength, preparsed, report, reportLength); // returns only buttons in selected usage - now it works!
+				char ID;
 
+				try {
+					char ID = abs((CHAR)(buttons[arrayButton].ReportID));
+
+				}
+				catch (...) {
+
+						std::cout << ("This device does not have buttons");
+						abort();
+				}
 				
-				if (HIDP_STATUS_SUCCESS == hi) {
-					std::cout << GetLastError();
+				// gotten the idea from some site on egmont.com
+				DWORD dwRead;
+				BOOL fWaitingOnRead = FALSE;
+				OVERLAPPED osReader = { 0 };
+				osReader.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+
+
+				buffer = &(ID);
+				
+
+				if (ReadFile(product, &buffer, capsStruct.InputReportByteLength, &dwRead, &osReader)) {
+
+					std::cout << "LEE ROY!!!";
+					
 				}
 
+				else {
 
+					std::cout << GetLastError();
+
+				}
+
+				HidP_GetData(HidP_Input, data, &dataLength, preparsed, buffer, capsStruct.InputReportByteLength+1);
+				
+				
+
+				//NTSTATUS hi = HidP_GetData(HidP_Input, data, &dataLength, preparsed, (PCHAR)buffer[0], capsStruct.InputReportByteLength); // returns only buttons in selected usage - now it works!
+
+				USAGE usageList[128]; // max button count
+
+				for (int i = 0; i < 100; i++) {
+					usageList[i] = 0;
+				}
+
+				ULONG ul = buttons[0].Range.UsageMax - buttons[0].Range.UsageMin+1;
+
+				while (true) {
+
+					again:
+					try {
+
+						if (!fWaitingOnRead) {
+							ReadFile(product, &buffer, capsStruct.InputReportByteLength, &dwRead, &osReader);
+
+
+							HidP_GetData(HidP_Input, data, &dataLength, preparsed, buffer, capsStruct.InputReportByteLength + 1);
+
+							HidP_GetUsages(HidP_Input, buttons->UsagePage, 0, usageList, &ul, preparsed, buffer, capsStruct.InputReportByteLength + 1);
+
+						}
+
+							Sleep(100);
+
+							if (GetLastError() != ERROR_IO_PENDING) {
+
+								std::cout << "waiting";
+
+							}
+
+
+
+					}
+					catch (...){
+
+						goto again;
+
+					}
+
+				}
+
+				CloseHandle(product);
 
 
 
@@ -586,10 +616,13 @@ void setup() {
 
 			}
 
-
-
+		
 		}
-	}
+	
+		
+}
+
+CloseHandle(product);
 }
 
 
