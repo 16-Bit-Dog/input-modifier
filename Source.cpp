@@ -519,12 +519,12 @@ void setup() {
 				
 				ULONG dataLength =  HidP_MaxDataListLength(HidP_Input, preparsed);
 			
-				PCHAR buffer;
+			
 
-				char ID;
+				UCHAR ID = (UCHAR)malloc(capsStruct.InputReportByteLength);
 
 				try {
-					char ID = abs((CHAR)(buttons[arrayButton].ReportID));
+					
 
 				}
 				catch (...) {
@@ -539,23 +539,28 @@ void setup() {
 				OVERLAPPED osReader = { 0 };
 				osReader.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
 
+				PVOID buffer = new PVOID;
 
-				buffer = &(ID);
-				
+				HidD_GetInputReport(product, buffer, capsStruct.InputReportByteLength + 1);
 
-				if (ReadFile(product, &buffer, capsStruct.InputReportByteLength, &dwRead, &osReader)) {
+			//	PCHAR Report;
 
-					std::cout << "LEE ROY!!!";
-					
-				}
 
-				else {
+			//	if (ReadFile(product, &Report, capsStruct.InputReportByteLength, &dwRead, &osReader)) {
 
-					std::cout << GetLastError();
+			//		HidP_InitializeReportForID(HidP_Input,(Report), preparsed, Report, capsStruct.InputReportByteLength);
 
-				}
+			//		std::cout << "LEE ROY!!!";
+			///		
+			//	}
 
-				HidP_GetData(HidP_Input, data, &dataLength, preparsed, buffer, capsStruct.InputReportByteLength+1);
+			//	else {
+
+			//		std::cout << GetLastError();
+
+		//		}
+
+				//HidP_GetData(HidP_Input, data, &dataLength, preparsed, Report, capsStruct.InputReportByteLength+1);
 				
 				
 
@@ -569,37 +574,39 @@ void setup() {
 
 				ULONG ul = buttons[0].Range.UsageMax - buttons[0].Range.UsageMin+1;
 
+				USAGE usageListOLD[128];
+
+				USAGE BreakUsageList[128];
+
+				USAGE MakeUsageList[128];
+
 				while (true) {
 
 					again:
-					try {
-
+				
 						if (!fWaitingOnRead) {
-							ReadFile(product, &buffer, capsStruct.InputReportByteLength, &dwRead, &osReader);
+							//ReadFile(product, Report, capsStruct.InputReportByteLength, &dwRead, &osReader);
 
 
-							HidP_GetData(HidP_Input, data, &dataLength, preparsed, buffer, capsStruct.InputReportByteLength + 1);
+							//HidP_GetData(HidP_Input, data, &dataLength, preparsed, Report, capsStruct.InputReportByteLength + 1);
 
-							HidP_GetUsages(HidP_Input, buttons->UsagePage, 0, usageList, &ul, preparsed, buffer, capsStruct.InputReportByteLength + 1);
 
+							HidP_GetUsages(HidP_Input, buttons->UsagePage, 0, usageList, &ul, preparsed, PCHAR(buffer), capsStruct.InputReportByteLength + 1);
+							
+							
+							HidP_UsageListDifference(usageListOLD, usageList, BreakUsageList, MakeUsageList, capsStruct.InputReportByteLength);
 						}
 
-							Sleep(100);
+						Sleep(100);
 
-							if (GetLastError() != ERROR_IO_PENDING) {
+						//	if (GetLastError() != ERROR_IO_PENDING) {
+//
+				//		std::cout << "waiting";
 
-								std::cout << "waiting";
+						//	}
 
-							}
+				//	}
 
-
-
-					}
-					catch (...){
-
-						goto again;
-
-					}
 
 				}
 
