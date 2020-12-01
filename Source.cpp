@@ -2,7 +2,6 @@
 //break points (f9) saved my life in this program... wow was it good
 // also this is a program filed under the liscene of apache license 2.0
 
-
 #include <windows.h>
 #include <setupapi.h>
 #include <Hidclass.h>
@@ -18,6 +17,12 @@
 #include <vector>
 #include <exception>
 #include "UsageIDGeneric.h"
+#include "buttonPage.h"
+#include "GameControlPage0x05.h"
+#include "HapticsPage.h"
+#include "SensorsPage.h"
+
+
 
 #define WIN32_LEAN_AND_MEAN //remove the unneeded
 
@@ -65,7 +70,7 @@ ULONG reportLength;
 
 
 std::string UsagePage_CONVERT(int UsagePage) { //        ;(   not the most fun if ever, plus I frogot about the constant expression requirment, and how vs code has no ..., so I remade a switch case statment
-	
+
 	std::string resultPage;
 
 	if (UsagePage == 0) {
@@ -79,7 +84,7 @@ std::string UsagePage_CONVERT(int UsagePage) { //        ;(   not the most fun i
 		resultPage = "Generic Desktop";
 
 	}
-	
+
 	else if (UsagePage == 2) {
 
 		resultPage = "Simulation Controls";
@@ -180,10 +185,10 @@ std::string UsagePage_CONVERT(int UsagePage) { //        ;(   not the most fun i
 
 	}
 
-	else{
+	else {
 		resultPage = "Unknown/Unlisted (if a request about a device being unlisted is posted, I will add more identifiers";
 	}
-	
+
 	return resultPage;
 
 }
@@ -191,17 +196,19 @@ std::string UsagePage_CONVERT(int UsagePage) { //        ;(   not the most fun i
 void GetState(PHIDP_PREPARSED_DATA preparsed, PCHAR report, ULONG reportLength) {
 
 
-	
+
 	// HERE LIES ME PRINTING OUT -data-
 
 		//Sleep(1000);
-	
+
 
 }
 
 
 
 void setup() {
+	system("RUNDLL32.EXE USER32.DLL, UpdatePerUserSystemParameters 1, True"); //update
+
 	std::cout << "\nif you see nothing after a while, click enter and everything will load\n\n"; // print number in HID thing to later extract packets from it and look at avaible buttons ect...
 
 	typePathData.cbSize = sizeof(SP_DEVICE_INTERFACE_DATA);
@@ -222,6 +229,8 @@ void setup() {
 
 
 	for (i = 0; i == i; i++) { // used the for loop format from Dan77062, Thanks for the neat code format ;)
+		good = true;
+
 		SetupDiEnumDeviceInfo(handle, i, &type);
 
 		std::cout << "\nnumber: " << i << "\n\n";
@@ -248,6 +257,7 @@ void setup() {
 
 			if (GetLastError() != 0) {
 				std::cout << "\n property collection is not a success:" << GetLastError() << "\n\n";
+				good = false;
 			}
 
 		}
@@ -287,6 +297,7 @@ void setup() {
 
 		if (product == INVALID_HANDLE_VALUE) {
 			std::cout << "Handle is invalid \n";
+			good = false;
 		}
 
 
@@ -296,13 +307,14 @@ void setup() {
 
 			if (preparsed == NULL) {
 				std::cout << "\n preparsed data collection FAILED: " << GetLastError() << "\n\n";
+				good = false;
 			}
 
 
 
 			if (HidP_GetCaps(preparsed, &capsStruct)) {
 
-				std::cout <<"\n\n Usage Page: " << UsagePage_CONVERT((int)capsStruct.UsagePage) <<"\n\n";
+				std::cout << "\n\n Usage Page: " << UsagePage_CONVERT((int)capsStruct.UsagePage) << "\n\n";
 
 				if ((int)capsStruct.UsagePage == 1) {
 					std::cout << "\n\n Usage ID (generic device pages only): " << UsageIDG_CONVERT((int)capsStruct.Usage) << "\n\n";
@@ -317,7 +329,7 @@ void setup() {
 
 				std::cout << "\n Number of Inputs found:  " << buttons->Range.UsageMax - buttons->Range.UsageMin + 1 << "\n\n\n\n\n\n\n\n";
 
-				if ((buttons->Range.UsageMax - buttons->Range.UsageMin + 1) > 0) {
+				if ((buttons->Range.UsageMax - buttons->Range.UsageMin + 1) > 0 && good == true) {
 
 					ProperDevice.push_back(i);
 				}
@@ -339,9 +351,9 @@ void setup() {
 
 		}
 
-		
-		
-			
+
+
+
 
 		if (good == false) {
 			break;
@@ -373,7 +385,7 @@ void setup() {
 
 
 	std::cout << "Possibley Good Devices: \n\n\n\n\n\n\n";
-	for (int x = 0; x < ProperDevice.size(); x++) {
+	for (int x = 0; x < ProperDevice.size(); x++) { // game controller
 
 		std::cout << "\n" << ProperDevice[x] << "\n";
 
@@ -389,21 +401,6 @@ void setup() {
 	HDEVINFO handle;
 
 	handle = SetupDiGetClassDevs(&hidGUID, NULL, NULL, DIGCF_PRESENT | DIGCF_INTERFACEDEVICE);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 	SetupDiEnumDeviceInfo(handle, numberOfDevice, &type);
 
@@ -489,14 +486,14 @@ void setup() {
 				for (int i = 0; i < sizeof(buttons); i++) { // sift to find buttons usage
 					std::cout << "\n\n" << UsagePage_CONVERT((int)buttons[i].UsagePage) << "\n\n\n";
 
-					switch((int)buttons[i].UsagePage){
-					case 9: 
+					switch ((int)buttons[i].UsagePage) {
+					case 9:
 
 						arrayButton = i;
 						continue;
-					
 
-					case 32: 
+
+					case 32:
 
 						arraySensor = i;
 						continue;
@@ -509,30 +506,30 @@ void setup() {
 
 				//HidP_GetSpecificButtonCaps(HidP_Input, USAGE(0x09), NULL, NULL, SButtons, &capsStruct.NumberInputButtonCaps, preparsed); // get array of spesific button caps - that I identify with usage - funny stuff here, most emu's say button 1 when mapping controllers because thats how HID usage is handdled for the button usage page
 
-				
+
 
 
 				PHIDP_DATA data;
 				data = (PHIDP_DATA)malloc(sizeof(PHIDP_DATA));
 
 
-				
-				ULONG dataLength =  HidP_MaxDataListLength(HidP_Input, preparsed);
-			
-			
+
+				ULONG dataLength = HidP_MaxDataListLength(HidP_Input, preparsed);
+
+
 
 				UCHAR ID = (UCHAR)malloc(capsStruct.InputReportByteLength);
 
 				try {
-					
+
 
 				}
 				catch (...) {
 
-						std::cout << ("This device does not have buttons");
-						abort();
+					std::cout << ("This device does not have buttons");
+					abort();
 				}
-				
+
 				// gotten the idea from some site on egmont.com
 				DWORD dwRead;
 				BOOL fWaitingOnRead = FALSE;
@@ -543,28 +540,28 @@ void setup() {
 
 				HidD_GetInputReport(product, buffer, capsStruct.InputReportByteLength + 1);
 
-			//	PCHAR Report;
+				//	PCHAR Report;
 
 
-			//	if (ReadFile(product, &Report, capsStruct.InputReportByteLength, &dwRead, &osReader)) {
+				//	if (ReadFile(product, &Report, capsStruct.InputReportByteLength, &dwRead, &osReader)) {
 
-			//		HidP_InitializeReportForID(HidP_Input,(Report), preparsed, Report, capsStruct.InputReportByteLength);
+				//		HidP_InitializeReportForID(HidP_Input,(Report), preparsed, Report, capsStruct.InputReportByteLength);
 
-			//		std::cout << "LEE ROY!!!";
-			///		
-			//	}
+				//		std::cout << "LEE ROY!!!";
+				///		
+				//	}
 
-			//	else {
+				//	else {
 
-			//		std::cout << GetLastError();
+				//		std::cout << GetLastError();
 
-		//		}
+			//		}
 
-				//HidP_GetData(HidP_Input, data, &dataLength, preparsed, Report, capsStruct.InputReportByteLength+1);
-				
-				
+					//HidP_GetData(HidP_Input, data, &dataLength, preparsed, Report, capsStruct.InputReportByteLength+1);
 
-				//NTSTATUS hi = HidP_GetData(HidP_Input, data, &dataLength, preparsed, (PCHAR)buffer[0], capsStruct.InputReportByteLength); // returns only buttons in selected usage - now it works!
+
+
+					//NTSTATUS hi = HidP_GetData(HidP_Input, data, &dataLength, preparsed, (PCHAR)buffer[0], capsStruct.InputReportByteLength); // returns only buttons in selected usage - now it works!
 
 				USAGE usageList[128]; // max button count
 
@@ -572,7 +569,7 @@ void setup() {
 					usageList[i] = 0;
 				}
 
-				ULONG ul = buttons[0].Range.UsageMax - buttons[0].Range.UsageMin+1;
+				ULONG ul = buttons[0].Range.UsageMax - buttons[0].Range.UsageMin + 1;
 
 				USAGE usageListOLD[128];
 
@@ -582,24 +579,24 @@ void setup() {
 
 				while (true) {
 
-					again:
-				
-						if (!fWaitingOnRead) {
-							//ReadFile(product, Report, capsStruct.InputReportByteLength, &dwRead, &osReader);
+				again:
+
+					if (!fWaitingOnRead) {
+						//ReadFile(product, Report, capsStruct.InputReportByteLength, &dwRead, &osReader);
 
 
-							//HidP_GetData(HidP_Input, data, &dataLength, preparsed, Report, capsStruct.InputReportByteLength + 1);
+						//HidP_GetData(HidP_Input, data, &dataLength, preparsed, Report, capsStruct.InputReportByteLength + 1);
 
 
-							HidP_GetUsages(HidP_Input, buttons->UsagePage, 0, usageList, &ul, preparsed, PCHAR(buffer), capsStruct.InputReportByteLength + 1);
-							
-							
-							HidP_UsageListDifference(usageListOLD, usageList, BreakUsageList, MakeUsageList, capsStruct.InputReportByteLength);
-						}
+						HidP_GetUsages(HidP_Input, buttons->UsagePage, 0, usageList, &ul, preparsed, PCHAR(buffer), capsStruct.InputReportByteLength + 1);
 
-						Sleep(100);
 
-						//	if (GetLastError() != ERROR_IO_PENDING) {
+						HidP_UsageListDifference(usageListOLD, usageList, BreakUsageList, MakeUsageList, capsStruct.InputReportByteLength);
+					}
+
+					Sleep(100);
+
+					//	if (GetLastError() != ERROR_IO_PENDING) {
 //
 				//		std::cout << "waiting";
 
@@ -623,13 +620,13 @@ void setup() {
 
 			}
 
-		
-		}
-	
-		
-}
 
-CloseHandle(product);
+		}
+
+
+	}
+
+	CloseHandle(product);
 }
 
 
@@ -640,7 +637,8 @@ int main() {
 
 	setup();
 
-	
+
+
 }
 
 
