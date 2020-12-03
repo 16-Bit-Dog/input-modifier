@@ -482,23 +482,40 @@ void setup() {
 				int arrayButton; // gets button array item for remote if any exists
 				int arraySensor; // gets sensor array item for remote if any exists
 
+				std::string page;
+
 				std::cout << "\n\n USAGEPAGES:\n";
 				for (int i = 0; i < sizeof(buttons); i++) { // sift to find buttons usage
-					std::cout << "\n\n" << UsagePage_CONVERT((int)buttons[i].UsagePage) << "\n\n\n";
+					page = UsagePage_CONVERT((int)buttons[i].UsagePage);
 
-					switch ((int)buttons[i].UsagePage) {
-					case 9:
+					std::cout << "\n\n" << page << "\n\n\n";
 
-						arrayButton = i;
-						continue;
-
-
-					case 32:
-
-						arraySensor = i;
-						continue;
+					if (page == "Button") {
+						std::cout << "\n\n\t\t" << UsageButton_CONVERT(buttons[i].UsagePage)<< "\n\n\n";
+						
 
 					}
+
+					else if (page == "Haptics") {
+						std::cout << "\n\n\t\t" << UsageHaptic_CONVERT(buttons[i].UsagePage)<< "\n\n\n";
+						
+
+					}
+										
+					else if (page == "GameControls") {
+						std::cout << "\n\n\t\t" << UsageGameControl_CONVERT(buttons[i].UsagePage)<< "\n\n\n";
+						
+						
+
+					}
+
+					else if (page == "Sensors") {
+						std::cout << "\n\n\t\t" << UsageSensors_CONVERT(buttons[i].UsagePage)<< "\n\n\n";
+						
+
+					}
+										
+					
 				}
 				std::cout << "\n---\n";
 
