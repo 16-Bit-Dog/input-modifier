@@ -476,12 +476,23 @@ void setup() {
 				//pre-fill most needed items
 
 				buttons = (PHIDP_BUTTON_CAPS)HeapAlloc(hHeap, 0, sizeof(HIDP_BUTTON_CAPS) * capsStruct.NumberInputButtonCaps);
+				valueCaps= (PHIDP_VALUE_CAPS)HeapAlloc(hHeap, 0, sizeof(HIDP_VALUE_CAPS) * capsStruct.NumberInputValueCaps);
+
+				
 				//
 				
-				HidP_GetButtonCaps(HidP_Input, buttons, &capsStruct.NumberInputButtonCaps, preparsed); // thank you random person on MSDN forums, I had no idea I did not need to use a report type var
+				
+				
 
 
-				HidP_GetValueCaps(HidP_Input, valueCaps, &capsStruct.NumberInputValueCaps, preparsed);
+				if (!HidP_GetButtonCaps(HidP_Input, buttons, &capsStruct.NumberInputButtonCaps, preparsed)) {// thank you random person on MSDN forums, I had no idea I did not need to use a report type var
+					std::cout << GetLastError();
+				}
+
+				if (!HidP_GetValueCaps(HidP_Input, valueCaps, &capsStruct.NumberInputValueCaps, preparsed)) {
+					std::cout << GetLastError();
+				}
+
 
 				//SimpleInputCount = buttons->Range.UsageMax - buttons->Range.UsageMin + 1;
 
@@ -492,51 +503,8 @@ void setup() {
 
 				std::string page;
 
-				std::cout << "\n\n USAGEPAGES:\n";
-				for (int i = 0; i < sizeof(buttons)+1; i++) { // sift to find buttons usage
-					page = UsagePage_CONVERT((int)buttons[i].UsagePage);
-
-					std::cout << "\n\n" << page << "\n\n\n";
-
-					if (page == "Button") {
-						std::cout << "\n\n\t\t" << UsageButton_CONVERT(buttons[i].UsagePage)<< "\n\n\n";
-						
-
-					}
-
-					else if (page == "Haptics") {
-						std::cout << "\n\t\t" << UsageHaptic_CONVERT(buttons[i].UsagePage)<< "\n\n\n";
-						
-
-					}
-										
-					else if (page == "GameControls") {
-						std::cout << "\n\t\t" << UsageGameControl_CONVERT(buttons[i].UsagePage)<< "\n\n\n";
-						
-						
-
-					}
-
-					else if (page == "Sensors") {
-						std::cout << "\n\t\t" << UsageSensors_CONVERT(buttons[i].UsagePage)<< "\n\n\n";
-						
-
-					}
-							
-					else if (page == "Digitizers") {
-
-						std::cout << "\n\t\t" << UsageDigitizer_Convert(buttons[i].UsagePage) << "\n\n\n";
-
-					}
-					
-				}
+			
 				std::cout << "\n---\n";
-
-				//PHIDP_BUTTON_CAPS SButtons = (PHIDP_BUTTON_CAPS)HeapAlloc(hHeap, 0, sizeof(HIDP_BUTTON_CAPS) * capsStruct.NumberInputButtonCaps);// spesific buttons
-
-				//HidP_GetSpecificButtonCaps(HidP_Input, USAGE(0x09), NULL, NULL, SButtons, &capsStruct.NumberInputButtonCaps, preparsed); // get array of spesific button caps - that I identify with usage - funny stuff here, most emu's say button 1 when mapping controllers because thats how HID usage is handdled for the button usage page
-
-
 
 
 				PHIDP_DATA data;
@@ -544,31 +512,24 @@ void setup() {
 
 
 
-				ULONG dataLength = HidP_MaxDataListLength(HidP_Input, preparsed);
-
-
-
-				UCHAR ID = (UCHAR)malloc(capsStruct.InputReportByteLength);
-
-				try {
-
-
-				}
-				catch (...) {
-
-					std::cout << ("This device does not have buttons");
-					abort();
-				}
-
 				// gotten the idea from some site on egmont.com
 				DWORD dwRead;
 				BOOL fWaitingOnRead = FALSE;
 				OVERLAPPED osReader = { 0 };
 				osReader.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
 
-				PVOID buffer = new PVOID;
+				BYTE* buffer = (BYTE*)malloc(sizeof(BYTE)*(capsStruct.InputReportByteLength));
+				
+				
+				
+				HidD_GetInputReport(product, buffer, capsStruct.InputReportByteLength+1);
+	
 
-				HidD_GetInputReport(product, buffer, capsStruct.InputReportByteLength + 1);
+
+				printf("Raw Report Data: ");
+				for (i = 0; i < capsStruct.InputReportByteLength; i++) {
+					printf("%02X ", buffer[i]);
+				}
 
 				//	PCHAR Report;
 
@@ -593,35 +554,16 @@ void setup() {
 
 					//NTSTATUS hi = HidP_GetData(HidP_Input, data, &dataLength, preparsed, (PCHAR)buffer[0], capsStruct.InputReportByteLength); // returns only buttons in selected usage - now it works!
 
-				USAGE usageList[128]; // max button count
+				PCHAR UsageValue = (PCHAR)malloc(sizeof(USAGE));
 
-				for (int i = 0; i < 100; i++) {
-					usageList[i] = 0;
-				}
-
-				ULONG ul = buttons[0].Range.UsageMax - buttons[0].Range.UsageMin + 1;
-
-				USAGE usageListOLD[128];
-
-				USAGE BreakUsageList[128];
-
-				USAGE MakeUsageList[128];
+			//	HidP_GetUsageValueArray(HidP_Input, valueCaps->UsagePage, 0, capsStruct.Usage,UsageValue, (valueCaps->BitSize)/8, preparsed, buffer, capsStruct.InputReportByteLength);
 
 				while (true) {
 
 				again:
 
 					if (!fWaitingOnRead) {
-						//ReadFile(product, Report, capsStruct.InputReportByteLength, &dwRead, &osReader);
-
-
-						//HidP_GetData(HidP_Input, data, &dataLength, preparsed, Report, capsStruct.InputReportByteLength + 1);
-
-
-						HidP_GetUsages(HidP_Input, buttons->UsagePage, 0, usageList, &ul, preparsed, PCHAR(buffer), capsStruct.InputReportByteLength + 1);
-
-
-						HidP_UsageListDifference(usageListOLD, usageList, BreakUsageList, MakeUsageList, capsStruct.InputReportByteLength);
+						
 					}
 
 					Sleep(100);
