@@ -21,7 +21,7 @@
 #include "GameControlPage0x05.h"
 #include "HapticsPage.h"
 #include "SensorsPage.h"
-
+#include "Digitizer.h"
 
 
 #define WIN32_LEAN_AND_MEAN //remove the unneeded
@@ -285,7 +285,7 @@ void setup() {
 
 
 		product = CreateFileW(typePath->DevicePath, 0, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0, NULL);
-
+		
 		if (GetLastError() == 0) {
 			//std::cout << "\n file handle creation is a success\n\n";
 		}
@@ -339,11 +339,13 @@ void setup() {
 
 
 				}
-
-				CloseHandle(product);
-
+				
+				
+			
 			}
+			
 			HidD_FreePreparsedData(preparsed);
+						
 		}
 		else {
 
@@ -351,16 +353,19 @@ void setup() {
 
 		}
 
-
-
-
+	
+		CloseHandle(product);
+		
 
 		if (good == false) {
 			break;
 		}
 
 	}
-
+	
+	
+	SetupDiDestroyDeviceInfoList(handle);
+		
 
 
 
@@ -396,7 +401,7 @@ void setup() {
 
 	// DEVICE CHOSEN
 
-	SetupDiDestroyDeviceInfoList(handle);
+	
 
 	HDEVINFO handle;
 
@@ -456,8 +461,8 @@ void setup() {
 
 		printf("\n\nMaking Device Handle: %ls \n\n", typePath->DevicePath); //breaking convention of printing due to data not being user important --> but may have use if someone wants a quick easy debug for their own program
 
-
-		product = CreateFileW(typePath->DevicePath, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_FLAG_OVERLAPPED, NULL);
+		
+		product = CreateFileW(typePath->DevicePath, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, NULL, OPEN_EXISTING, FILE_FLAG_OVERLAPPED, NULL);
 
 		std::cout << GetLastError();
 
@@ -472,8 +477,11 @@ void setup() {
 
 				buttons = (PHIDP_BUTTON_CAPS)HeapAlloc(hHeap, 0, sizeof(HIDP_BUTTON_CAPS) * capsStruct.NumberInputButtonCaps);
 				//
-
+				
 				HidP_GetButtonCaps(HidP_Input, buttons, &capsStruct.NumberInputButtonCaps, preparsed); // thank you random person on MSDN forums, I had no idea I did not need to use a report type var
+
+
+				HidP_GetValueCaps(HidP_Input, valueCaps, &capsStruct.NumberInputValueCaps, preparsed);
 
 				//SimpleInputCount = buttons->Range.UsageMax - buttons->Range.UsageMin + 1;
 
@@ -485,7 +493,7 @@ void setup() {
 				std::string page;
 
 				std::cout << "\n\n USAGEPAGES:\n";
-				for (int i = 0; i < sizeof(buttons); i++) { // sift to find buttons usage
+				for (int i = 0; i < sizeof(buttons)+1; i++) { // sift to find buttons usage
 					page = UsagePage_CONVERT((int)buttons[i].UsagePage);
 
 					std::cout << "\n\n" << page << "\n\n\n";
@@ -497,24 +505,29 @@ void setup() {
 					}
 
 					else if (page == "Haptics") {
-						std::cout << "\n\n\t\t" << UsageHaptic_CONVERT(buttons[i].UsagePage)<< "\n\n\n";
+						std::cout << "\n\t\t" << UsageHaptic_CONVERT(buttons[i].UsagePage)<< "\n\n\n";
 						
 
 					}
 										
 					else if (page == "GameControls") {
-						std::cout << "\n\n\t\t" << UsageGameControl_CONVERT(buttons[i].UsagePage)<< "\n\n\n";
+						std::cout << "\n\t\t" << UsageGameControl_CONVERT(buttons[i].UsagePage)<< "\n\n\n";
 						
 						
 
 					}
 
 					else if (page == "Sensors") {
-						std::cout << "\n\n\t\t" << UsageSensors_CONVERT(buttons[i].UsagePage)<< "\n\n\n";
+						std::cout << "\n\t\t" << UsageSensors_CONVERT(buttons[i].UsagePage)<< "\n\n\n";
 						
 
 					}
-										
+							
+					else if (page == "Digitizers") {
+
+						std::cout << "\n\t\t" << UsageDigitizer_Convert(buttons[i].UsagePage) << "\n\n\n";
+
+					}
 					
 				}
 				std::cout << "\n---\n";
