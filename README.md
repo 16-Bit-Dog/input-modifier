@@ -14,3 +14,7 @@ Hid.lib;Ole32.lib;Setupapi.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;co
 C++ general:
 
 %(AdditionalIncludeDirectories)
+
+
+
+I realized my logic to tackling my goal is flawed greatly; therefore this project most likely is retired to make time for me to learn about other parts of MSDN <-- I will still learn more about HID devices and usb decriptor reading
